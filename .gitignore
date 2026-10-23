@@ -1,0 +1,6 @@
+node_modules/
+dist/
+sftp.json
+.vscode/
+public/api/config.php
+*.log
