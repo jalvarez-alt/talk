@@ -18,6 +18,8 @@ src/
   Vendedor.jsx     crear pedidos, ver los propios, cancelar, responder "no hallado"
   Bodega.jsx       pedidos activos + historial de todos
   Admin.jsx        gestión de usuarios
+  Reporte.jsx      reporte de faltantes / no encontrados (solo admin)
+  exportar.js      exportación del reporte a PDF (jsPDF, carga diferida) y XLS
   componentes.jsx  componentes compartidos (Modal, etc.)
   api.js           cliente fetch; manda cabecera X-Requested-With: talk
   util.js          constantes (ROLES, estados, etc.) y helpers
@@ -32,7 +34,15 @@ public/api/
 
 - **vendedor**: crea pedidos, ve solo los suyos, cancela (con motivo) y responde a "no hallado en bodega".
 - **bodega**: gestiona pedidos activos y ve el historial de todos.
-- **admin**: lo de bodega + crear/editar/desactivar usuarios, cambiar roles y contraseñas.
+- **admin**: lo de bodega + crear/editar/desactivar usuarios, cambiar roles y contraseñas + pestaña **Reportes**.
+
+## Reporte de faltantes (admin)
+
+Pestaña *Reportes*: filtra por rango de fechas (por defecto 30 días) y tipo (todos / no hallado en bodega / faltante de inventario), muestra resumen y tabla, y exporta a **PDF** (jsPDF + autotable, horizontal, con logo) o **XLS** (tabla HTML con extensión .xls; Excel puede avisar del formato). Endpoint `reportes/faltantes` (solo admin, máx. 5000 filas). Limitación: usa el estado *actual* del pedido; uno que fue "no hallado" y luego se encontró ya no aparece (no hay historial de cambios de estado).
+
+## Imagen corporativa
+
+Marca **Motos y Motos El Paisa** (Cali). Logo en `public/logo.png` (99×100 px, tomado de su sitio web). Paleta: negro `--negro #151515`, amarillo `--marca #f2c41d`, blanco. Cabecera negra con borde amarillo y logo; login con logo; favicon y theme-color. Si hay logo en mayor resolución o hex oficial, reemplazarlos.
 
 ## Base de datos
 
@@ -57,7 +67,7 @@ Cualquier otra combinación responde 409. La actualización usa transacción con
 
 ## Endpoints (`/api/index.php`, por parámetro de ruta)
 
-`auth/me`, `auth/login`, `auth/logout`, `auth/password`, `usuarios`, `usuarios/crear`, `usuarios/actualizar`, `pedidos`, `pedidos/crear`, `pedidos/estado`. Las escrituras son POST y exigen la cabecera `X-Requested-With: talk` (protección CSRF básica).
+`auth/me`, `auth/login`, `auth/logout`, `auth/password`, `usuarios`, `usuarios/crear`, `usuarios/actualizar`, `pedidos`, `pedidos/crear`, `pedidos/estado`, `reportes/faltantes`. La ruta va en el parámetro `r` (`api/index.php?r=pedidos`). Las escrituras son POST y exigen la cabecera `X-Requested-With: talk` (protección CSRF básica).
 
 ## Desarrollo local
 
@@ -65,6 +75,8 @@ Cualquier otra combinación responde 409. La actualización usa transacción con
 php -S localhost:8000 -t public     # backend
 npm run dev                         # frontend (proxy /api -> :8000)
 ```
+
+Local: base MySQL `talk` en XAMPP con su propio `public/api/config.php` (no versionado); crear el admin en `http://localhost:8000/api/install.php`. Ojo: `npm run build` copia ese `config.php` a `dist/api`; **borrarlo de `dist/` antes de subir**.
 
 ## Despliegue (resumen)
 
@@ -75,8 +87,19 @@ npm run dev                         # frontend (proxy /api -> :8000)
 5. Abrir `/api/install.php`, crear el admin y **borrarlo**.
 6. Crear vendedores y bodega desde *Usuarios*. Usar HTTPS.
 
+## Entorno de prueba (Namecheap)
+
+- URL: https://prueba.solucioneseys.co/
+- Datos de SFTP en `sftp.json` y de MySQL en el `config.php` del servidor; ninguno está versionado. Subida: `npm run build`, quitar `dist/api/config.php` y subir `dist/` por SFTP sin sobrescribir el `config.php` del servidor.
+- El servidor venía con PHP 7.2; hay que fijar **PHP 8.2** en cPanel (Select PHP Version). El `.htaccess` no lo cambia.
+- Pendiente: borrar `api/install.php` del servidor y bloquear `api/config.php` en `public/api/.htaccess`.
+
+## Repositorio
+
+https://github.com/jalvarez-alt/talk.git (rama `main`). Excluidos: `sftp.json`, `public/api/config.php`, `node_modules`, `dist`.
+
 ## Notas
 
 - Interfaz y mensajes en español.
 - Al cambiar el nombre de sesión/cabecera (motopina → talk) hay que subir frontend y backend juntos; las sesiones abiertas se cierran.
-- La carpeta del proyecto sigue llamándose `motopina`; renombrarla a `talk` está pendiente (requiere cerrarla en VS Code).
+- La carpeta del proyecto ya se llama `talk`.
