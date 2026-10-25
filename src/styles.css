@@ -14,8 +14,8 @@
 }
 
 * { box-sizing: border-box; }
-html { font-size: 125%; }
-@media (min-width: 700px) { html { font-size: 150%; } }
+html { font-size: 112.5%; }
+@media (min-width: 700px) { html { font-size: 135%; } }
 body {
   margin: 0;
   background: var(--bg);
@@ -61,7 +61,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .app-header .btn-cambiar-rol { background: transparent; border-color: #555; color: #fff; }
 .selector-vista { display: flex; align-items: center; gap: 10px; font-weight: 700; margin-bottom: 16px; }
 .selector-vista select { flex: 1; max-width: 420px; padding: 10px 12px; border: 2px solid var(--marca); border-radius: 10px; background: var(--card); font-weight: 700; }
-.app-header-logo img { width: 56px !important; height: 56px !important; }
+.app-header-logo img { width: 50px !important; height: 50px !important; }
 .dashboard h2 { margin: 0 0 12px; }
 .dashboard-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
 .header-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
