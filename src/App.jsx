@@ -116,6 +116,16 @@ export default function App() {
         </div>
       </header>
 
+      {yo.rol === 'bodega' && (
+        <label className="selector-vista">
+          Vista
+          <select value={vista ?? ''} onChange={(e) => setVista(e.target.value)}>
+            <option value="bodega">🏭 Bodega</option>
+            <option value="vendedor">🛒 Vendedor (mis pedidos)</option>
+          </select>
+        </label>
+      )}
+
       {yo.rol === 'admin' && (
         <div className="tabs">
           <button className={`tab ${vista === 'bodega' ? 'activa' : ''}`} onClick={() => setVista('bodega')}>

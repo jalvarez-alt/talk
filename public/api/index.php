@@ -171,7 +171,7 @@ try {
             $u = requerir_rol();
             $where = [];
             $vals = [];
-            if ($u['rol'] === 'vendedor') {
+            if ($u['rol'] === 'vendedor' || !empty($_GET['mios'])) {
                 $where[] = 'p.vendedor_id = ?';
                 $vals[] = $u['id'];
             }
@@ -225,7 +225,7 @@ try {
 
         case 'pedidos/crear':
             requerir_post();
-            $u = requerir_rol('vendedor');
+            $u = requerir_rol('vendedor', 'bodega');
             $producto = texto(entrada()['producto'] ?? '', 1000);
             if ($producto === '') {
                 fallar('Escribe el producto.');
@@ -253,7 +253,9 @@ try {
             $actual = $p['estado'];
             $cambios = null;
 
-            if ($u['rol'] === 'vendedor') {
+            // Acciones de vendedor: sobre pedidos propios (también para bodega, que puede actuar como vendedor).
+            // Acciones de bodega: solo bodega/admin.
+            if (in_array($accion, ['cancelar', 'encontrado_almacen', 'rebuscar'], true)) {
                 if ((int) $p['vendedor_id'] !== $u['id']) {
                     $pdo->rollBack();
                     fallar('Este pedido no es tuyo.', 403);
@@ -267,6 +269,10 @@ try {
                     $cambios = ['estado' => 'pendiente', 'rebusqueda' => 1];
                 }
             } else {
+                if ($u['rol'] === 'vendedor') {
+                    $pdo->rollBack();
+                    fallar('No tienes permiso para esto.', 403);
+                }
                 $abierto = in_array($actual, ['pendiente', 'buscando'], true);
                 if ($accion === 'buscando' && $actual === 'pendiente') {
                     $cambios = ['estado' => 'buscando'];

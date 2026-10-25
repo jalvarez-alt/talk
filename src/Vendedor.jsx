@@ -32,7 +32,7 @@ export default function Vendedor() {
 
   const cargar = async () => {
     try {
-      const { pedidos: lista } = await api.pedidos(rangoFechas(filtro, fecha));
+      const { pedidos: lista } = await api.pedidos({ ...rangoFechas(filtro, fecha), mios: 1 });
       if (previos.current && filtro === 'hoy') {
         for (const p of lista) {
           const antes = previos.current.get(p.id);
