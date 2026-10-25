@@ -10,6 +10,21 @@ const MOTIVOS = [
 ];
 const ESTADOS_ACTIVOS = ['pendiente', 'buscando', 'no_encontrado_bodega'];
 
+/** Vendedor en cuyo nombre se actúa: el elegido en "¿Quién eres?" o, si no hay, el propio usuario. */
+function vendedor_objetivo(PDO $pdo, array $u, mixed $como): int
+{
+    $id = (int) $como;
+    if ($id === 0 || $id === $u['id']) {
+        return $u['id'];
+    }
+    $st = $pdo->prepare("SELECT id FROM usuarios WHERE id = ? AND rol = 'vendedor' AND activo = 1");
+    $st->execute([$id]);
+    if (!$st->fetchColumn()) {
+        fallar('Vendedor no válido.');
+    }
+    return $id;
+}
+
 try {
     $ruta = $_GET['r'] ?? '';
     $pdo = db();
@@ -167,13 +182,20 @@ try {
             responder(['ok' => true]);
 
         // ---------- Pedidos ----------
+        case 'vendedores':
+            requerir_rol('vendedor', 'bodega', 'admin');
+            responder(['vendedores' => array_map(
+                fn($f) => ['id' => (int) $f['id'], 'nombre' => $f['nombre']],
+                $pdo->query("SELECT id, nombre FROM usuarios WHERE rol = 'vendedor' AND activo = 1 ORDER BY nombre")->fetchAll()
+            )]);
+
         case 'pedidos':
             $u = requerir_rol();
             $where = [];
             $vals = [];
             if ($u['rol'] === 'vendedor' || !empty($_GET['mios'])) {
                 $where[] = 'p.vendedor_id = ?';
-                $vals[] = $u['id'];
+                $vals[] = vendedor_objetivo($pdo, $u, $_GET['como'] ?? 0);
             }
             if (!empty($_GET['activos'])) {
                 $where[] = "p.estado IN ('pendiente','buscando','no_encontrado_bodega')";
@@ -226,12 +248,13 @@ try {
         case 'pedidos/crear':
             requerir_post();
             $u = requerir_rol('vendedor', 'bodega');
-            $producto = texto(entrada()['producto'] ?? '', 1000);
+            $in = entrada();
+            $producto = texto($in['producto'] ?? '', 1000);
             if ($producto === '') {
                 fallar('Escribe el producto.');
             }
             $pdo->prepare("INSERT INTO pedidos (vendedor_id, producto, estado, created_at) VALUES (?, ?, 'pendiente', UTC_TIMESTAMP())")
-                ->execute([$u['id'], $producto]);
+                ->execute([vendedor_objetivo($pdo, $u, $in['como'] ?? 0), $producto]);
             responder(['ok' => true], 201);
 
         case 'pedidos/estado':
@@ -256,7 +279,7 @@ try {
             // Acciones de vendedor: sobre pedidos propios (también para bodega, que puede actuar como vendedor).
             // Acciones de bodega: solo bodega/admin.
             if (in_array($accion, ['cancelar', 'encontrado_almacen', 'rebuscar'], true)) {
-                if ((int) $p['vendedor_id'] !== $u['id']) {
+                if ((int) $p['vendedor_id'] !== vendedor_objetivo($pdo, $u, $in['como'] ?? 0)) {
                     $pdo->rollBack();
                     fallar('Este pedido no es tuyo.', 403);
                 }

@@ -12,7 +12,17 @@ import {
   useSondeo,
 } from './util.js';
 
-export default function Vendedor() {
+const guardado = () => {
+  try {
+    return localStorage.getItem('talk_como') || '';
+  } catch {
+    return '';
+  }
+};
+
+export default function Vendedor({ yo }) {
+  const [vendedores, setVendedores] = useState([]);
+  const [como, setComo] = useState(guardado);
   const [producto, setProducto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
@@ -25,14 +35,40 @@ export default function Vendedor() {
   const [notif, setNotif] = useState(notificacionesActivas);
   const previos = useRef(null);
 
-  // Al cambiar el filtro no se avisa de lo que simplemente aparece en la nueva lista.
+  useEffect(() => {
+    api
+      .vendedores()
+      .then(({ vendedores: lista }) => {
+        setVendedores(lista);
+        // Sin elección previa válida: un vendedor entra como él mismo; bodega/admin deben escoger.
+        const valido = lista.some((v) => String(v.id) === como);
+        if (!valido) setComo(lista.some((v) => v.id === yo.id) ? String(yo.id) : '');
+      })
+      .catch((e) => setError(e.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const elegir = (id) => {
+    setComo(id);
+    try {
+      localStorage.setItem('talk_como', id);
+    } catch {
+      // sin almacenamiento: la elección vale solo para esta sesión
+    }
+  };
+
+  // Al cambiar el filtro o el vendedor no se avisa de lo que simplemente aparece en la nueva lista.
   useEffect(() => {
     previos.current = null;
-  }, [filtro, fecha]);
+  }, [filtro, fecha, como]);
 
   const cargar = async () => {
+    if (!como) {
+      setPedidos([]);
+      return;
+    }
     try {
-      const { pedidos: lista } = await api.pedidos({ ...rangoFechas(filtro, fecha), mios: 1 });
+      const { pedidos: lista } = await api.pedidos({ ...rangoFechas(filtro, fecha), mios: 1, como });
       if (previos.current && filtro === 'hoy') {
         for (const p of lista) {
           const antes = previos.current.get(p.id);
@@ -47,15 +83,15 @@ export default function Vendedor() {
       console.error(e);
     }
   };
-  useSondeo(cargar, 4000, [filtro, fecha]);
+  useSondeo(cargar, 4000, [filtro, fecha, como]);
 
   const enviar = async (e) => {
     e.preventDefault();
-    if (!producto.trim() || enviando) return;
+    if (!producto.trim() || enviando || !como) return;
     setEnviando(true);
     setError(null);
     try {
-      await api.crearPedido(producto.trim());
+      await api.crearPedido(producto.trim(), como);
       setProducto('');
       setExito(true);
       setTimeout(() => setExito(false), 3000);
@@ -70,7 +106,7 @@ export default function Vendedor() {
     setOcupado(true);
     setError(null);
     try {
-      await api.accionPedido(id, nombre, extra);
+      await api.accionPedido(id, nombre, { ...extra, como });
       setCancelando(null);
       await cargar();
     } catch (err) {
@@ -91,6 +127,18 @@ export default function Vendedor() {
         </button>
       )}
 
+      <label className="selector-vista">
+        ¿Quién eres?
+        <select value={como} onChange={(e) => elegir(e.target.value)}>
+          <option value="">-- Selecciona tu nombre --</option>
+          {vendedores.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.nombre}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <form onSubmit={enviar} className="pedido-form">
         <textarea
           placeholder="Escribe el producto / pedido aquí..."
@@ -100,7 +148,7 @@ export default function Vendedor() {
           maxLength={1000}
           required
         />
-        <button type="submit" className="btn-enviar" disabled={enviando || !producto.trim()}>
+        <button type="submit" className="btn-enviar" disabled={enviando || !producto.trim() || !como}>
           {enviando ? 'Enviando...' : '📦 Enviar pedido a bodega'}
         </button>
       </form>

@@ -39,8 +39,9 @@ export const api = {
   actualizarUsuario: (datos) => llamar('usuarios/actualizar', { post: datos }),
 
   reporteFaltantes: (params) => llamar('reportes/faltantes', { params }),
+  vendedores: () => llamar('vendedores'),
   pedidos: (params) => llamar('pedidos', { params }),
-  crearPedido: (producto) => llamar('pedidos/crear', { post: { producto } }),
+  crearPedido: (producto, como) => llamar('pedidos/crear', { post: { producto, como } }),
   accionPedido: (id, accion, extra = {}) =>
     llamar('pedidos/estado', { post: { id, accion, ...extra } }),
 };

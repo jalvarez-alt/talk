@@ -121,7 +121,7 @@ export default function App() {
           Vista
           <select value={vista ?? ''} onChange={(e) => setVista(e.target.value)}>
             <option value="bodega">🏭 Bodega</option>
-            <option value="vendedor">🛒 Vendedor (mis pedidos)</option>
+            <option value="vendedor">🛒 Vendedor</option>
           </select>
         </label>
       )}
@@ -140,7 +140,7 @@ export default function App() {
         </div>
       )}
 
-      {vista === 'vendedor' && <Vendedor />}
+      {vista === 'vendedor' && <Vendedor yo={yo} />}
       {vista === 'bodega' && <Bodega />}
       {vista === 'usuarios' && <Admin yo={yo} />}
       {vista === 'reportes' && <Reporte />}
