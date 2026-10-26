@@ -33,7 +33,11 @@ public/api/
 ## Roles
 
 - **vendedor**: crea pedidos, ve solo los suyos, cancela (con motivo) y responde a "no hallado en bodega".
-- **bodega**: gestiona pedidos activos y ve el historial de todos.
+- **bodega**: gestiona pedidos activos y ve el historial de todos. Además tiene una lista **Vista** (Bodega / Vendedor) para actuar también como vendedor.
+
+### "¿Quién eres?" (panel del vendedor)
+
+Lista con los usuarios de rol vendedor activos (endpoint `vendedores`). El elegido se guarda en `localStorage` (`talk_como`) y se envía como `como` al crear pedidos, listar (`mios=1`) y ejecutar acciones de vendedor (cancelar, encontrado_almacen, rebuscar). El servidor valida que `como` sea un vendedor activo (`vendedor_objetivo()` en `index.php`). Sin nombre elegido no se puede enviar ni se ve historial; un vendedor entra preseleccionado como él mismo. **Decisión de seguridad**: vendedor, bodega y admin pueden actuar en nombre de cualquier vendedor (como en la app anterior); las acciones de bodega siguen vetadas al rol vendedor (403). La lista se llena creando usuarios con rol *Vendedor* en *Usuarios*.
 - **admin**: lo de bodega + crear/editar/desactivar usuarios, cambiar roles y contraseñas + pestaña **Reportes**.
 
 ## Reporte de faltantes (admin)
@@ -42,7 +46,7 @@ Pestaña *Reportes*: filtra por rango de fechas (por defecto 30 días) y tipo (t
 
 ## Imagen corporativa
 
-Marca **Motos y Motos El Paisa** (Cali). Logo en `public/logo.png` (99×100 px, tomado de su sitio web). Paleta: negro `--negro #151515`, amarillo `--marca #f2c41d`, blanco. Cabecera negra con borde amarillo y logo; login con logo; favicon y theme-color. Si hay logo en mayor resolución o hex oficial, reemplazarlos.
+Marca **Motos y Motos El Paisa** (Cali). Logo en `public/logo.png` (99×100 px, tomado de su sitio web). Interfaz escalada con `html { font-size }` (112,5 % en móvil, 135 % desde 700 px; es el ajuste para agrandar/reducir todo). Paleta: negro `--negro #151515`, amarillo `--marca #f2c41d`, blanco. Cabecera negra con borde amarillo y logo; login con logo; favicon y theme-color. Si hay logo en mayor resolución o hex oficial, reemplazarlos.
 
 ## Base de datos
 
@@ -67,7 +71,7 @@ Cualquier otra combinación responde 409. La actualización usa transacción con
 
 ## Endpoints (`/api/index.php`, por parámetro de ruta)
 
-`auth/me`, `auth/login`, `auth/logout`, `auth/password`, `usuarios`, `usuarios/crear`, `usuarios/actualizar`, `pedidos`, `pedidos/crear`, `pedidos/estado`, `reportes/faltantes`. La ruta va en el parámetro `r` (`api/index.php?r=pedidos`). Las escrituras son POST y exigen la cabecera `X-Requested-With: talk` (protección CSRF básica).
+`auth/me`, `auth/login`, `auth/logout`, `auth/password`, `usuarios`, `usuarios/crear`, `usuarios/actualizar`, `pedidos`, `pedidos/crear`, `pedidos/estado`, `reportes/faltantes`, `vendedores`. `pedidos` acepta `mios=1` y `como=<id>`. La ruta va en el parámetro `r` (`api/index.php?r=pedidos`). Las escrituras son POST y exigen la cabecera `X-Requested-With: talk` (protección CSRF básica).
 
 ## Desarrollo local
 
