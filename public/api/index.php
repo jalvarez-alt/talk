@@ -150,6 +150,14 @@ try {
                 $sets[] = 'nombre = ?';
                 $vals[] = $n;
             }
+            if (isset($in['usuario'])) {
+                $nuevo = strtolower(texto($in['usuario'], 30));
+                if (!preg_match('/^[a-z0-9._-]{3,30}$/', $nuevo)) {
+                    fallar('Usuario no válido (3-30 caracteres, sin espacios).');
+                }
+                $sets[] = 'usuario = ?';
+                $vals[] = $nuevo;
+            }
             if (isset($in['rol'])) {
                 if (!in_array($in['rol'], ROLES, true)) {
                     fallar('Rol no válido.');
@@ -178,7 +186,14 @@ try {
                 fallar('Nada que actualizar.');
             }
             $vals[] = $id;
-            $pdo->prepare('UPDATE usuarios SET ' . implode(', ', $sets) . ' WHERE id = ?')->execute($vals);
+            try {
+                $pdo->prepare('UPDATE usuarios SET ' . implode(', ', $sets) . ' WHERE id = ?')->execute($vals);
+            } catch (PDOException $e) {
+                if ($e->getCode() === '23000') {
+                    fallar('Ese nombre de usuario ya existe.', 409);
+                }
+                throw $e;
+            }
             responder(['ok' => true]);
 
         case 'usuarios/eliminar':

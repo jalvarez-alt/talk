@@ -15,6 +15,7 @@ export default function Admin({ yo }) {
   const [claveNueva, setClaveNueva] = useState('');
   const [editando, setEditando] = useState(null);
   const [nombreNuevo, setNombreNuevo] = useState('');
+  const [usuarioNuevo, setUsuarioNuevo] = useState('');
   const [eliminando, setEliminando] = useState(null);
 
   const cargar = async () => {
@@ -66,8 +67,8 @@ export default function Admin({ yo }) {
   };
 
   const guardarNombre = async () => {
-    if (await actualizar({ id: editando.id, nombre: nombreNuevo })) {
-      setExito(`Nombre actualizado: ${nombreNuevo.trim()}.`);
+    if (await actualizar({ id: editando.id, nombre: nombreNuevo, usuario: usuarioNuevo })) {
+      setExito(`Datos actualizados: ${nombreNuevo.trim()} (${usuarioNuevo.trim().toLowerCase()}).`);
       setEditando(null);
     }
   };
@@ -172,9 +173,10 @@ export default function Admin({ yo }) {
                     onClick={() => {
                       setEditando(u);
                       setNombreNuevo(u.nombre);
+                      setUsuarioNuevo(u.usuario);
                     }}
                   >
-                    ✏️ Nombre
+                    ✏️ Editar
                   </button>
                   <button className="btn-filtro" onClick={() => setClaveDe(u)}>
                     🔑 Contraseña
@@ -197,19 +199,34 @@ export default function Admin({ yo }) {
       </div>
 
       {editando && (
-        <Modal titulo={`Cambiar nombre de ${editando.nombre}`} onCerrar={() => setEditando(null)}>
-          <input
-            className="modal-input"
-            value={nombreNuevo}
-            onChange={(e) => setNombreNuevo(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && nombreNuevo.trim() && guardarNombre()}
-            maxLength={60}
-            autoFocus
-          />
+        <Modal titulo={`Editar a ${editando.nombre}`} onCerrar={() => setEditando(null)}>
+          <label className="field">
+            Nombre
+            <input
+              className="modal-input"
+              value={nombreNuevo}
+              onChange={(e) => setNombreNuevo(e.target.value)}
+              maxLength={60}
+              autoFocus
+            />
+          </label>
+          <label className="field">
+            Usuario (para entrar)
+            <input
+              className="modal-input"
+              value={usuarioNuevo}
+              onChange={(e) => setUsuarioNuevo(e.target.value)}
+              maxLength={30}
+              autoCapitalize="none"
+            />
+          </label>
           <div className="modal-acciones">
             <button
               className="btn-motivo btn-confirmar-nota"
-              disabled={!nombreNuevo.trim() || nombreNuevo.trim() === editando.nombre}
+              disabled={
+                !nombreNuevo.trim() ||
+                (nombreNuevo.trim() === editando.nombre && usuarioNuevo.trim().toLowerCase() === editando.usuario)
+              }
               onClick={guardarNombre}
             >
               ✅ Guardar
