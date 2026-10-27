@@ -8,6 +8,7 @@ const MOTIVOS = [
     'cliente_arrepentido' => 'El cliente se arrepintió',
     'error_vendedor' => 'El vendedor se equivocó de producto',
 ];
+const TONOS = ['campana', 'sirena', 'alarma', 'timbre', 'bocina', 'digital'];
 const ESTADOS_ACTIVOS = ['pendiente', 'buscando', 'no_encontrado_bodega'];
 
 /** Vendedor en cuyo nombre se actúa: el elegido en "¿Quién eres?" o, si no hay, el propio usuario. */
@@ -194,6 +195,30 @@ try {
                 }
                 throw $e;
             }
+            responder(['ok' => true]);
+
+        case 'ajustes':
+            requerir_rol();
+            $pdo->exec("CREATE TABLE IF NOT EXISTS ajustes (
+    clave VARCHAR(40) PRIMARY KEY,
+    valor VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $t = $pdo->query("SELECT valor FROM ajustes WHERE clave = 'tono'")->fetchColumn();
+            responder(['tono' => in_array($t, TONOS, true) ? $t : 'campana']);
+
+        case 'ajustes/guardar':
+            requerir_post();
+            requerir_rol('admin');
+            $tono = (string) (entrada()['tono'] ?? '');
+            if (!in_array($tono, TONOS, true)) {
+                fallar('Tono no válido.');
+            }
+            $pdo->exec("CREATE TABLE IF NOT EXISTS ajustes (
+    clave VARCHAR(40) PRIMARY KEY,
+    valor VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $pdo->prepare("INSERT INTO ajustes (clave, valor) VALUES ('tono', ?) ON DUPLICATE KEY UPDATE valor = VALUES(valor)")
+                ->execute([$tono]);
             responder(['ok' => true]);
 
         case 'usuarios/eliminar':

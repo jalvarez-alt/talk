@@ -42,6 +42,11 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS login_intentos (
     INDEX idx_intento (ip, usuario, creado)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+$pdo->exec("CREATE TABLE IF NOT EXISTS ajustes (
+    clave VARCHAR(40) PRIMARY KEY,
+    valor VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
 $hayUsuarios = (int) $pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn() > 0;
 $h = fn(string $s) => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 $mensaje = '';

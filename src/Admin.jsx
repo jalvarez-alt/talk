@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from './api.js';
 import { Modal } from './componentes.jsx';
-import { ROLES, useSondeo } from './util.js';
+import { ROLES, TONOS, desbloquearAudio, fijarTono, sonido, useSondeo } from './util.js';
 
 const VACIO = { nombre: '', usuario: '', password: '', rol: 'vendedor' };
 
@@ -17,6 +17,8 @@ export default function Admin({ yo }) {
   const [nombreNuevo, setNombreNuevo] = useState('');
   const [usuarioNuevo, setUsuarioNuevo] = useState('');
   const [eliminando, setEliminando] = useState(null);
+  const [tono, setTono] = useState('campana');
+  const [tonoGuardado, setTonoGuardado] = useState('campana');
 
   const cargar = async () => {
     try {
@@ -26,6 +28,34 @@ export default function Admin({ yo }) {
     }
   };
   useSondeo(cargar, 15000, []);
+
+  useEffect(() => {
+    api
+      .ajustes()
+      .then(({ tono: t }) => {
+        setTono(t);
+        setTonoGuardado(t);
+      })
+      .catch((e) => setError(e.message));
+  }, []);
+
+  const probar = () => {
+    desbloquearAudio();
+    sonido(tono);
+  };
+
+  const guardarTono = async () => {
+    setError(null);
+    setExito(null);
+    try {
+      await api.guardarAjustes(tono);
+      fijarTono(tono);
+      setTonoGuardado(tono);
+      setExito(`Tono de alerta guardado: ${TONOS[tono].label}.`);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   const campo = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -89,6 +119,26 @@ export default function Admin({ yo }) {
   return (
     <div className="dashboard">
       <h2>👥 Usuarios</h2>
+
+      <section className="admin-form">
+        <h3>🔊 Tono de las alertas</h3>
+        <p className="modal-instruccion">Es el sonido que oyen todos los usuarios cuando llega un pedido o una respuesta.</p>
+        <div className="filtro-fechas">
+          <select className="input-fecha" value={tono} onChange={(e) => setTono(e.target.value)}>
+            {Object.entries(TONOS).map(([k, t]) => (
+              <option key={k} value={k}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          <button type="button" className="btn-filtro" onClick={probar}>
+            ▶ Probar
+          </button>
+          <button type="button" className="btn-filtro activo" disabled={tono === tonoGuardado} onClick={guardarTono}>
+            💾 Guardar
+          </button>
+        </div>
+      </section>
 
       <form onSubmit={crear} className="admin-form">
         <h3>Crear usuario</h3>

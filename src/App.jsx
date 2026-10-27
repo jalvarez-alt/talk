@@ -6,7 +6,7 @@ import Vendedor from './Vendedor.jsx';
 import Bodega from './Bodega.jsx';
 import Reporte from './Reporte.jsx';
 import Admin from './Admin.jsx';
-import { ROLES, desbloquearAudio } from './util.js';
+import { ROLES, desbloquearAudio, fijarTono, useSondeo } from './util.js';
 
 function CambiarPassword({ onCerrar }) {
   const [actual, setActual] = useState('');
@@ -93,6 +93,14 @@ export default function App() {
     document.title = yo ? `TALK ${yo.nombre}` : 'TALK';
     setVista(yo?.rol === 'admin' ? 'bodega' : (yo?.rol ?? null));
   }, [yo]);
+
+  // El tono de alerta lo define el admin: se refresca de vez en cuando para todos los dispositivos.
+  useSondeo(
+    () => yo && api.ajustes().then(({ tono }) => fijarTono(tono)).catch(() => {}),
+    30000,
+    [yo?.id],
+    true,
+  );
 
   const salir = async () => {
     try {

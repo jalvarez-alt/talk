@@ -34,6 +34,8 @@ export const api = {
   logout: () => llamar('auth/logout', { post: {} }),
   cambiarPassword: (actual, nueva) => llamar('auth/password', { post: { actual, nueva } }),
 
+  ajustes: () => llamar('ajustes'),
+  guardarAjustes: (tono) => llamar('ajustes/guardar', { post: { tono } }),
   usuarios: () => llamar('usuarios'),
   crearUsuario: (datos) => llamar('usuarios/crear', { post: datos }),
   eliminarUsuario: (id) => llamar('usuarios/eliminar', { post: { id } }),
