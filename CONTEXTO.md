@@ -6,7 +6,7 @@ App web para coordinar pedidos entre **vendedores** y **bodega**. El vendedor pi
 
 - **Frontend**: React 19 + Vite 7 (`src/`), JavaScript (sin TypeScript), CSS plano en `src/styles.css`.
 - **Backend**: PHP 8.1+ / MySQL (PDO) en `public/api/`, sin framework. Un solo router en `index.php` con `switch` por ruta.
-- **Hosting objetivo**: compartido (cPanel / Namecheap). Sin WebSockets, por eso el tiempo real es polling cada 4 s (solo con la pestaña visible), con sonido y notificación del navegador al detectar cambios.
+- **Hosting objetivo**: compartido (cPanel / Namecheap). Sin WebSockets, por eso el tiempo real es polling cada 4 s, con sonido y notificación del navegador al detectar cambios. Bodega y Vendedor siguen consultando con la pestaña oculta/minimizada (`useSondeo(..., true)`); un audio silencioso en bucle, iniciado en el primer clic o tecla (`desbloquearAudio()` en `util.js`), evita que el navegador congele la pestaña. No suena si se cierra la pestaña o el equipo se suspende (haría falta Web Push).
 - `npm run build` genera `dist/` (incluye `dist/api`), que es lo que se sube al servidor.
 
 ## Estructura
@@ -40,6 +40,11 @@ public/api/
 Lista con los usuarios de rol vendedor activos (endpoint `vendedores`). El elegido se guarda en `localStorage` (`talk_como`) y se envía como `como` al crear pedidos, listar (`mios=1`) y ejecutar acciones de vendedor (cancelar, encontrado_almacen, rebuscar). El servidor valida que `como` sea un vendedor activo (`vendedor_objetivo()` en `index.php`). Sin nombre elegido no se puede enviar ni se ve historial; un vendedor entra preseleccionado como él mismo. **Decisión de seguridad**: vendedor, bodega y admin pueden actuar en nombre de cualquier vendedor (como en la app anterior); las acciones de bodega siguen vetadas al rol vendedor (403). La lista se llena creando usuarios con rol *Vendedor* en *Usuarios*.
 - **admin**: lo de bodega + crear/editar/desactivar usuarios, cambiar roles y contraseñas + pestaña **Reportes**.
 
+## Gestión de usuarios y tono de alertas (admin)
+
+- Pestaña *Usuarios*: crear, **✏️ Editar** (nombre y usuario de login; el usuario son 3-30 caracteres `a-z0-9._-`, único), cambiar rol y contraseña, activar/desactivar y **🗑️ Eliminar** (`usuarios/eliminar`). No se puede eliminar a uno mismo ni a quien tenga pedidos (el historial depende del vendedor; se sugiere desactivar).
+- **Tono de las alertas**: el admin elige uno global (campana, sirena, alarma, timbre, bocina, digital) con ▶ Probar / 💾 Guardar. Se guarda en la tabla `ajustes` (clave `tono`; se crea sola si falta), lo leen todos (`ajustes`) y solo el admin lo cambia (`ajustes/guardar`). Los tonos se sintetizan con WebAudio en `TONOS` de `util.js`; cada cliente refresca el valor cada 30 s. La lista blanca está también en `TONOS` de `index.php`.
+
 ## Reporte de faltantes (admin)
 
 Pestaña *Reportes*: filtra por rango de fechas (por defecto 30 días) y tipo (todos / no hallado en bodega / faltante de inventario), muestra resumen y tabla, y exporta a **PDF** (jsPDF + autotable, horizontal, con logo) o **XLS** (tabla HTML con extensión .xls; Excel puede avisar del formato). Endpoint `reportes/faltantes` (solo admin, máx. 5000 filas). Limitación: usa el estado *actual* del pedido; uno que fue "no hallado" y luego se encontró ya no aparece (no hay historial de cambios de estado).
@@ -50,7 +55,7 @@ Marca **Motos y Motos El Paisa** (Cali). Logo en `public/logo.png` (99×100 px, 
 
 ## Base de datos
 
-Tablas: `usuarios` (rol: admin/bodega/vendedor), `pedidos`, `login_intentos` (limitación de intentos de login).
+Tablas: `usuarios` (rol: admin/bodega/vendedor), `pedidos`, `login_intentos` (limitación de intentos de login), `ajustes` (clave/valor; hoy solo `tono`).
 
 ## Flujo de estados del pedido
 
@@ -71,7 +76,7 @@ Cualquier otra combinación responde 409. La actualización usa transacción con
 
 ## Endpoints (`/api/index.php`, por parámetro de ruta)
 
-`auth/me`, `auth/login`, `auth/logout`, `auth/password`, `usuarios`, `usuarios/crear`, `usuarios/actualizar`, `pedidos`, `pedidos/crear`, `pedidos/estado`, `reportes/faltantes`, `vendedores`. `pedidos` acepta `mios=1` y `como=<id>`. La ruta va en el parámetro `r` (`api/index.php?r=pedidos`). Las escrituras son POST y exigen la cabecera `X-Requested-With: talk` (protección CSRF básica).
+`auth/me`, `auth/login`, `auth/logout`, `auth/password`, `usuarios`, `usuarios/crear`, `usuarios/actualizar`, `usuarios/eliminar`, `ajustes`, `ajustes/guardar`, `pedidos`, `pedidos/crear`, `pedidos/estado`, `reportes/faltantes`, `vendedores`. `pedidos` acepta `mios=1` y `como=<id>`. La ruta va en el parámetro `r` (`api/index.php?r=pedidos`). Las escrituras son POST y exigen la cabecera `X-Requested-With: talk` (protección CSRF básica).
 
 ## Desarrollo local
 
