@@ -6,7 +6,7 @@ import Vendedor from './Vendedor.jsx';
 import Bodega from './Bodega.jsx';
 import Reporte from './Reporte.jsx';
 import Admin from './Admin.jsx';
-import { ROLES } from './util.js';
+import { ROLES, desbloquearAudio } from './util.js';
 
 function CambiarPassword({ onCerrar }) {
   const [actual, setActual] = useState('');
@@ -76,6 +76,17 @@ export default function App() {
       .then(({ usuario }) => setYo(usuario))
       .catch(() => setYo(null))
       .finally(() => setCargando(false));
+  }, []);
+
+  // El primer clic o tecla habilita el audio (política de autoplay) para que las alertas suenen minimizado.
+  useEffect(() => {
+    const habilitar = () => desbloquearAudio();
+    window.addEventListener('pointerdown', habilitar);
+    window.addEventListener('keydown', habilitar);
+    return () => {
+      window.removeEventListener('pointerdown', habilitar);
+      window.removeEventListener('keydown', habilitar);
+    };
   }, []);
 
   useEffect(() => {

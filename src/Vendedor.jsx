@@ -83,7 +83,7 @@ export default function Vendedor({ yo }) {
       console.error(e);
     }
   };
-  useSondeo(cargar, 4000, [filtro, fecha, como]);
+  useSondeo(cargar, 4000, [filtro, fecha, como], true);
 
   const enviar = async (e) => {
     e.preventDefault();

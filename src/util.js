@@ -44,9 +44,48 @@ export function formatearHora(iso, conFecha) {
   return `${d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })} • ${hora}`;
 }
 
+let ctxAudio = null;
+let silencio = null;
+
+function contexto() {
+  if (!ctxAudio) ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctxAudio.state === 'suspended') ctxAudio.resume();
+  return ctxAudio;
+}
+
+/** WAV de 1 s en silencio, generado en memoria. */
+function wavSilencio() {
+  const n = 8000;
+  const b = new DataView(new ArrayBuffer(44 + n));
+  const t = (o, s) => [...s].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
+  t(0, 'RIFF'); b.setUint32(4, 36 + n, true); t(8, 'WAVEfmt ');
+  b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
+  b.setUint32(24, 8000, true); b.setUint32(28, 8000, true); b.setUint16(32, 1, true); b.setUint16(34, 8, true);
+  t(36, 'data'); b.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) b.setUint8(44 + i, 128);
+  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+}
+
+/**
+ * Debe llamarse desde un gesto del usuario (clic/tecla). Habilita el audio y mantiene un audio
+ * silencioso en bucle: así el navegador no congela la pestaña al minimizarla y las alertas siguen sonando.
+ */
+export function desbloquearAudio() {
+  try {
+    contexto();
+    if (!silencio) {
+      silencio = new Audio(wavSilencio());
+      silencio.loop = true;
+    }
+    if (silencio.paused) silencio.play().catch(() => {});
+  } catch (e) {
+    console.error('No se pudo habilitar el audio:', e);
+  }
+}
+
 export function sonido() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = contexto();
     [587.33, 880, 1174.66].forEach((freq, i) => {
       const t = ctx.currentTime + i * 0.18;
       const osc = ctx.createOscillator();
@@ -81,13 +120,13 @@ export async function pedirPermisoNotificaciones() {
   return permiso === 'granted';
 }
 
-/** Ejecuta `fn` ya y luego cada `ms` mientras la pestaña esté visible. Se reinicia con `deps`. */
-export function useSondeo(fn, ms, deps) {
+/** Ejecuta `fn` ya y luego cada `ms` (con `segundoPlano`, también con la pestaña oculta o minimizada). Se reinicia con `deps`. */
+export function useSondeo(fn, ms, deps, segundoPlano = false) {
   const ref = useRef(fn);
   ref.current = fn;
   useEffect(() => {
     const tick = () => {
-      if (!document.hidden) ref.current();
+      if (segundoPlano || !document.hidden) ref.current();
     };
     tick();
     const id = setInterval(tick, ms);

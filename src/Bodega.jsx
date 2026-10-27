@@ -44,7 +44,7 @@ export default function Bodega() {
     }
     setCargando(false);
   };
-  useSondeo(cargar, 4000, []);
+  useSondeo(cargar, 4000, [], true);
 
   const cargarHistorial = async () => {
     try {
