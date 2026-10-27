@@ -36,6 +36,7 @@ export const api = {
 
   usuarios: () => llamar('usuarios'),
   crearUsuario: (datos) => llamar('usuarios/crear', { post: datos }),
+  eliminarUsuario: (id) => llamar('usuarios/eliminar', { post: { id } }),
   actualizarUsuario: (datos) => llamar('usuarios/actualizar', { post: datos }),
 
   reporteFaltantes: (params) => llamar('reportes/faltantes', { params }),

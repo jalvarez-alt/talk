@@ -13,6 +13,9 @@ export default function Admin({ yo }) {
   const [guardando, setGuardando] = useState(false);
   const [claveDe, setClaveDe] = useState(null);
   const [claveNueva, setClaveNueva] = useState('');
+  const [editando, setEditando] = useState(null);
+  const [nombreNuevo, setNombreNuevo] = useState('');
+  const [eliminando, setEliminando] = useState(null);
 
   const cargar = async () => {
     try {
@@ -60,6 +63,26 @@ export default function Admin({ yo }) {
       setClaveDe(null);
       setClaveNueva('');
     }
+  };
+
+  const guardarNombre = async () => {
+    if (await actualizar({ id: editando.id, nombre: nombreNuevo })) {
+      setExito(`Nombre actualizado: ${nombreNuevo.trim()}.`);
+      setEditando(null);
+    }
+  };
+
+  const eliminar = async () => {
+    setError(null);
+    setExito(null);
+    try {
+      await api.eliminarUsuario(eliminando.id);
+      setExito(`Usuario ${eliminando.nombre} eliminado.`);
+      await cargar();
+    } catch (err) {
+      setError(err.message);
+    }
+    setEliminando(null);
   };
 
   return (
@@ -144,6 +167,15 @@ export default function Admin({ yo }) {
                 </td>
                 <td>{u.activo ? 'Activo' : 'Desactivado'}</td>
                 <td className="tabla-acciones">
+                  <button
+                    className="btn-filtro"
+                    onClick={() => {
+                      setEditando(u);
+                      setNombreNuevo(u.nombre);
+                    }}
+                  >
+                    ✏️ Nombre
+                  </button>
                   <button className="btn-filtro" onClick={() => setClaveDe(u)}>
                     🔑 Contraseña
                   </button>
@@ -152,12 +184,59 @@ export default function Admin({ yo }) {
                       {u.activo ? '⛔ Desactivar' : '✅ Activar'}
                     </button>
                   )}
+                  {u.id !== yo.id && (
+                    <button className="btn-filtro" onClick={() => setEliminando(u)}>
+                      🗑️ Eliminar
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editando && (
+        <Modal titulo={`Cambiar nombre de ${editando.nombre}`} onCerrar={() => setEditando(null)}>
+          <input
+            className="modal-input"
+            value={nombreNuevo}
+            onChange={(e) => setNombreNuevo(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && nombreNuevo.trim() && guardarNombre()}
+            maxLength={60}
+            autoFocus
+          />
+          <div className="modal-acciones">
+            <button
+              className="btn-motivo btn-confirmar-nota"
+              disabled={!nombreNuevo.trim() || nombreNuevo.trim() === editando.nombre}
+              onClick={guardarNombre}
+            >
+              ✅ Guardar
+            </button>
+            <button className="btn-volver" onClick={() => setEditando(null)}>
+              Volver
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {eliminando && (
+        <Modal titulo={`¿Eliminar a ${eliminando.nombre}?`} onCerrar={() => setEliminando(null)}>
+          <p className="modal-instruccion">
+            Se borra el usuario <strong>{eliminando.usuario}</strong> de forma permanente. Si ya tiene pedidos, no se podrá
+            eliminar y conviene desactivarlo.
+          </p>
+          <div className="modal-acciones">
+            <button className="btn-motivo btn-confirmar-nota" onClick={eliminar}>
+              🗑️ Sí, eliminar
+            </button>
+            <button className="btn-volver" onClick={() => setEliminando(null)}>
+              Volver
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {claveDe && (
         <Modal titulo={`Nueva contraseña para ${claveDe.nombre}`} onCerrar={() => setClaveDe(null)}>

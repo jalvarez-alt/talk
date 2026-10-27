@@ -181,6 +181,27 @@ try {
             $pdo->prepare('UPDATE usuarios SET ' . implode(', ', $sets) . ' WHERE id = ?')->execute($vals);
             responder(['ok' => true]);
 
+        case 'usuarios/eliminar':
+            requerir_post();
+            $admin = requerir_rol('admin');
+            $id = (int) (entrada()['id'] ?? 0);
+            if ($id === $admin['id']) {
+                fallar('No puedes eliminar tu propio usuario.');
+            }
+            $st = $pdo->prepare('SELECT nombre FROM usuarios WHERE id = ?');
+            $st->execute([$id]);
+            if ($st->fetchColumn() === false) {
+                fallar('Usuario no encontrado.', 404);
+            }
+            $st = $pdo->prepare('SELECT COUNT(*) FROM pedidos WHERE vendedor_id = ?');
+            $st->execute([$id]);
+            $n = (int) $st->fetchColumn();
+            if ($n > 0) {
+                fallar("Tiene $n pedido(s) en el historial y no se puede eliminar. Desactívalo para que no pueda entrar.", 409);
+            }
+            $pdo->prepare('DELETE FROM usuarios WHERE id = ?')->execute([$id]);
+            responder(['ok' => true]);
+
         // ---------- Pedidos ----------
         case 'vendedores':
             requerir_rol('vendedor', 'bodega', 'admin');
