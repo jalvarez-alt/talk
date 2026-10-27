@@ -110,7 +110,7 @@ export const notificacionesActivas = () =>
 
 export function avisar(titulo, cuerpo) {
   sonido();
-  if (notificacionesActivas()) new Notification(titulo, { body: cuerpo });
+  if (notificacionesActivas()) new Notification(titulo, { body: cuerpo, icon: './logo.png', tag: 'talk', renotify: true });
 }
 
 export async function pedirPermisoNotificaciones() {
